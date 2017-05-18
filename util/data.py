@@ -4,6 +4,7 @@ import random
 
 import numpy as np
 
+import keras.backend as K
 from keras.preprocessing.image import apply_transform, flip_axis
 from keras.preprocessing.image import transform_matrix_offset_center
 from keras.preprocessing.image import Iterator, load_img, img_to_array
@@ -160,9 +161,10 @@ class TwoImageIterator(Iterator):
         b = load_img(os.path.join(self.b_dir, fname),
                      grayscale=self.is_b_grayscale,
                      target_size=self.target_size)
-
-        a = img_to_array(a, self.dim_ordering)
-        b = img_to_array(b, self.dim_ordering)
+        #a = img_to_array(a, self.dim_ordering)
+        #b = img_to_array(b, self.dim_ordering)
+        a = img_to_array(a, K.image_data_format())
+        b = img_to_array(b, K.image_data_format())
 
         return a, b
 

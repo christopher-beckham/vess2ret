@@ -91,13 +91,14 @@ def discriminator_generator(it, atob, dout_size):
         batch_y = np.ones((batch_x.shape[0], 1) + dout_size)
         batch_y[fake.shape[0]:] = 0
 
+        #import pdb; pdb.set_trace()
+        
         yield batch_x, batch_y
 
 
 def train_discriminator(d, it, samples_per_batch=20):
     """Train the discriminator network."""
-    return d.fit_generator(it, samples_per_epoch=samples_per_batch*2, nb_epoch=1, verbose=False)
-
+    return d.fit_generator(it, steps_per_epoch=samples_per_batch, epochs=1, verbose=False)
 
 def pix2pix_generator(it, dout_size):
     """
@@ -115,8 +116,7 @@ def pix2pix_generator(it, dout_size):
 
 def train_pix2pix(pix2pix, it, samples_per_batch=20):
     """Train the generator network."""
-    return pix2pix.fit_generator(it, nb_epoch=1, samples_per_epoch=samples_per_batch, verbose=False)
-
+    return pix2pix.fit_generator(it, epochs=1, steps_per_epoch=samples_per_batch, verbose=False)
 
 def evaluate(models, generators, losses, val_samples=192):
     """Evaluate and display the losses of the models."""
@@ -164,6 +164,8 @@ def generators_creation(it_train, it_val, models, dout_size):
     d_gen = discriminator_generator(it_train, models.atob, dout_size)
     d_gen_val = discriminator_generator(it_val, models.atob, dout_size)
 
+    #import pdb; pdb.set_trace()
+    
     # Workaround to make tensorflow work. When atob.predict is called the first
     # time it calls tf.get_default_graph. This should be done on the main thread
     # and not inside fit_generator. See https://github.com/fchollet/keras/issues/2397
@@ -305,7 +307,7 @@ if __name__ == '__main__':
         if opt == '--help':
             print_help()
             sys.exit()
-        elif opt in ('--nfatob' '--nfd', '--a_ch', '--b_ch', '--epochs', '--batch_size',
+        elif opt in ('--nfatob', '--nfd', '--a_ch', '--b_ch', '--epochs', '--batch_size',
                      '--samples_per_batch', '--save_every', '--train_samples', '--val_samples',
                      '--target_size'):
             params[opt[2:]] = int(arg)
@@ -319,14 +321,21 @@ if __name__ == '__main__':
         elif opt in ('--base_dir', '--train_dir', '--val_dir', '--expt_name', '--log_dir'):
             params[opt[2:]] = arg
 
+    print "params:"
+    print params
+            
     dopt = Adam(lr=params.lr, beta_1=params.beta_1)
 
     # Define the U-Net generator
     unet = m.g_unet(params.a_ch, params.b_ch, params.nfatob,
                     batch_size=params.batch_size, is_binary=params.is_b_binary)
+    "unet summary:"
+    unet.summary()
 
     # Define the discriminator
     d = m.discriminator(params.a_ch, params.b_ch, params.nfd, opt=dopt)
+    "discriminator summary:"
+    d.summary()
 
     if params.continue_train:
         load_weights(unet, d, log_dir=params.log_dir, expt_name=params.expt_name)
@@ -356,4 +365,7 @@ if __name__ == '__main__':
                               target_size=(ts, ts))
 
     models = model_creation(d, unet, params)
+
     train(models, it_train, it_val, params)
+
+    #import pdb; pdb.set_trace()
